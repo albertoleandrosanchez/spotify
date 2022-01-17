@@ -1,18 +1,26 @@
-import { getToken} from "next-auth/jwt";
+import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
+
 export async function middleware(req) {
-    //token exists if user is logged in
-    const token =await  getToken({req, secret: process.env.JWT_SECRET});
-    const {pathname} = req.nextUrl;
-    // allow request if the following is true
-    // 1) its a request for next-auth session & provider fetching
-    // 2) the token exists
-    if (pathname.includes('/api/auth') || token) {
-        return NextResponse.next()
-    }
+    const { pathname } = req.nextUrl;
+
+    // the token will exist if user is authenticated
+    const token = await getToken({ req, secret: process.env.JWT_SECRET });
     
-    //redirect them to login if the dont have a token AND are requesting a protected route
-    if(!token && pathname !== '/login') {
-        return NextResponse.redirect('/login')
+    const isAuthenticated = pathname.includes('/api/auth') || token;
+
+    // check if user is authenticated, visits login page
+    // if (isAuthenticated && pathname === '/login') {
+    //     return NextResponse.redirect('/');
+    // }
+
+    // check if user is authenticated, allow them to access a proctected route 
+    if (isAuthenticated) {
+        return NextResponse.next();
+    }
+
+    // if user is not authenticated, kick them out of a proctected route
+    if (!token && pathname !== '/login') {
+        return NextResponse.redirect('/login');
     }
 }
